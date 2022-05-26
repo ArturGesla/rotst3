@@ -3,7 +3,7 @@
 
 int main()
 {
-    rs1D();
+    rs1D(101,-1);
     
     return 0;
 }
