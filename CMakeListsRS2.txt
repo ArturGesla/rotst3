@@ -1,0 +1,113 @@
+cmake_minimum_required(VERSION 3.10)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+#SET(GCC_COVERAGE_COMPILE_FLAGS "-fopenmp")
+#SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
+
+set(CMAKE_BUILD_TYPE Release)
+#set(CMAKE_BUILD_TYPE Debug)
+
+#set(ENV{ROTST_DIR} "${CMAKE_CURRENT_SOURCE_DIR}/build/")
+
+project(rotst VERSION 1.0)
+
+file(GLOB_RECURSE SRC_FILES library/src/*.cpp external/lean_vtk/*.cpp)
+
+add_executable(rotst drivers/main.cpp ${SRC_FILES})
+
+set(INC_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/library/inc")
+list(APPEND INC_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/external/lean_vtk")
+list(APPEND INC_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/../eigen")
+ list(APPEND INC_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/../SuiteSparse-5.12.0/UMFPACK/Include")
+ list(APPEND INC_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/../SuiteSparse-5.12.0/AMD/Include")
+ list(APPEND INC_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/../SuiteSparse-5.12.0/SuiteSparse_config")
+# list(APPEND INC_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/../superlu/SRC")
+ list(APPEND INC_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/external/arpackpp-for-eigen/include")
+ list(APPEND INC_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/external/arpackpp-for-eigen/examples/matrices/nonsym")
+#pardiso include on grappe
+ list(APPEND INC_DIRS "$ENV{MKLROOT}/compilers_and_libraries_2017.4.196/linux/mkl/include/")
+
+#message (STATUS "${INC_DIRS}")
+
+
+#target_include_directories(rotst PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/library/inc ${CMAKE_CURRENT_SOURCE_DIR}/external/lean_vtk ${CMAKE_CURRENT_SOURCE_DIR}/../eigen  ${CMAKE_CURRENT_SOURCE_DIR}/../spectra/include ${CMAKE_CURRENT_SOURCE_DIR}/../SuiteSparse-5.12.0/UMFPACK/Include ${CMAKE_CURRENT_SOURCE_DIR}/../SuiteSparse-5.12.0/include)
+target_include_directories(rotst PUBLIC ${INC_DIRS})
+
+set(LOC_LIB_DIRS "/people/gesla/Documents/git/others/my-libs/usr/lib/x86_64-linux-gnu") 
+list (APPEND LOC_LIB_DIRS "/people/gesla/Documents/git/SuiteSparse-5.12.0/lib" )
+list (APPEND LOC_LIB_DIRS "/soft/ifort/composer_xe_2013.1.117/mkl/lib/intel64/" )
+
+#umfpack search
+find_library(UMFPACK_DIR NAMES libumfpack.so libumfpack.so.5 libumfpack.so.5.7.1 PATHS ${LOC_LIB_DIRS})
+message (STATUS "umfpack found at: ${UMFPACK_DIR}")
+target_link_libraries(rotst ${UMFPACK_DIR})
+
+# # lapack search
+# find_library(LAPACK_DIR NAMES openblas) #lapack is built in
+# message (STATUS "lapack found at: ${LAPACK_DIR}")
+# target_link_libraries(rotst ${LAPACK_DIR})
+
+# superlu search
+find_library(SUPERLU_DIR NAMES libsuperlu.so.5.3.0 PATHS "/people/gesla/git/superlu/build/SRC")
+#find_library(SUPERLU_DIR NAMES libsuperlu.so libsuperlu.so.5 libsuperlu.so.5.3.0 PATHS "/people/gesla/git/superlu/build/SRC")
+message (STATUS "superlu found at: ${SUPERLU_DIR}")
+target_link_libraries(rotst ${SUPERLU_DIR})
+
+# arpack search (probably in some local dir)
+find_library(ARPACK_DIR NAMES arpack libarpack.so.2 PATHS ${LOC_LIB_DIRS})
+message (STATUS "arpack found at: ${ARPACK_DIR}")
+target_link_libraries(rotst ${ARPACK_DIR})
+
+#this adds all mkl libraries and could be done in cmake syntax but this is shorter
+# SET(GCC_COVERAGE_LINK_FLAGS    "-L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl ")
+# SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}")
+
+#mkl libraries linking - remember to comment out openblas
+
+# mkl_intel_lp64 search
+find_library(mkl_intel_lp64_dir NAMES mkl_intel_lp64 PATHS $ENV{MKLROOT}/lib/intel64/ $ENV{MKLROOT}/mkl/lib/intel64/)
+message (STATUS "mkl_intel_lp64 found at: ${mkl_intel_lp64_dir}")
+target_link_libraries(rotst ${mkl_intel_lp64_dir} )
+
+# mkl_gnu_thread search
+find_library(mkl_gnu_thread_dir NAMES mkl_gnu_thread PATHS $ENV{MKLROOT}/lib/intel64/ $ENV{MKLROOT}/mkl/lib/intel64/)
+message (STATUS "mkl_gnu_thread found at: ${mkl_gnu_thread_dir}")
+target_link_libraries(rotst ${mkl_gnu_thread_dir} )
+
+# mkl_core search
+find_library(mkl_core_dir NAMES mkl_core PATHS $ENV{MKLROOT}/lib/intel64/ $ENV{MKLROOT}/mkl/lib/intel64/)
+message (STATUS "mkl_core found at: ${mkl_core_dir}")
+target_link_libraries(rotst ${mkl_core_dir} )
+
+# gomp search
+find_library(gomp_dir NAMES gomp libgomp.so.1)
+message (STATUS "gomp found at: ${gomp_dir}")
+target_link_libraries(rotst ${gomp_dir} )
+
+#not sure if those are necessary - pardiso works without them
+
+# pthread search
+find_library(pthread_dir NAMES pthread )
+message (STATUS "pthread found at: ${pthread_dir}")
+target_link_libraries(rotst ${pthread_dir} )
+
+# m search
+find_library(m_dir NAMES m )
+message (STATUS "m found at: ${m_dir}")
+target_link_libraries(rotst ${m_dir} )
+
+# dl search
+find_library(dl_dir NAMES dl )
+message (STATUS "dl found at: ${dl_dir}")
+target_link_libraries(rotst ${dl_dir} )
+
+# this is adding dir to run time linking - don't know how to do this better
+SET(GCC_COVERAGE_LINK_FLAGS    "-Wl,-rpath=/soft/ifort/composer_xe_2013.1.117/mkl/lib/intel64")
+SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}")
+
+
+
+
+
