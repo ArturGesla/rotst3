@@ -9,6 +9,14 @@
 #include "Eigen/Dense"
 #include "Eigen/Sparse"
 
+// for ev search
+#include "arcomp.h"
+#include "lcmatrxeEigen.h"
+//#include "lcmatrxf.h"
+#include "arlnsmat.h"
+#include "arlgcomp.h"
+#include "lcompsol.h"
+
 using namespace Eigen;
 
 namespace rs1DStab
@@ -21,6 +29,8 @@ namespace rs1DStab
     // void newtonIteration(const SparseMatrix<double> &jac, const VectorXd &rhs, VectorXd &u);
     // void saveResult(VectorXd &u);
     void checkJacobian();
+    void findev(SparseMatrix<std::complex<double>> jac, SparseMatrix<std::complex<double>> B,
+                int nev, double sigmaR, double sigmaI);
 
     void rs1DStab(double Re, int n, double Ro, double zmax)
     {
@@ -35,16 +45,70 @@ namespace rs1DStab
         VectorXd phi = VectorXd::Zero(n * neq);
 
         VectorXd u(n * 3);
-        u = rs1D::rs1D(n, Ro, zmax);
-        std::complex<double> alpha(1, 0);
-        std::complex<double> beta(0, 0);
+        u = rs1D::rs1D(n, Ro, zmax, true);
+        std::complex<double> alpha(1.0, 0.0);
+        std::complex<double> beta(0.0, 0.0);
+        // std::complex<double> alpha(0.34, 0.0776);
+        //         std::complex<double> beta(-0.1174, 0);
 
         calculateJacobianAndRhsAndB(phi, jac, B, rhs, u, n, neq, Ro, zmax, Re, alpha, beta);
 
         // check whether jacobian is correct
         checkJacobian();
 
-        //J*phi=omega*phi*B
+        // J*phi=omega*phi*B
+        findev(jac, B, 25, 0.0, 0.0);
+    }
+    void findev(SparseMatrix<std::complex<double>> jac, SparseMatrix<std::complex<double>> Bmat,
+                int nev, double sigmaR, double sigmaI)
+    {
+
+        // Defining variables;
+
+        int n;                          // Dimension of the problem.
+        int nnza, nnzb;                 // Number of nonzero elements in A and B.
+        int *irowa, *irowb;             // pointers to arrays that store the row
+                                        // indices of the nonzeros in A and B.
+        int *pcola, *pcolb;             // pointers to arrays of pointers to the
+                                        // beginning of each column of A and B in
+                                        // valA and ValB.
+        arcomplex<double> rho;          // parameter used in CompMatrixE.
+        arcomplex<double> *valA, *valB; // pointers to arrays that store the
+                                        // nonzero elements of A and B.
+
+        // Creating complex matrices A and B.
+
+        n = jac.rows();
+        rho = arcomplex<double>(10.0, 0.0);
+        CompMatrixE(n, rho, nnza, valA, irowa, pcola, jac);
+        ARluNonSymMatrix<arcomplex<double>, double> A(n, nnza, valA, irowa, pcola);
+
+        CompMatrixE(n, rho, nnzb, valB, irowb, pcolb, Bmat);
+        ARluNonSymMatrix<arcomplex<double>, double> B(n, nnzb, valB, irowb, pcolb);
+
+        // {
+        //     SparseQR<SparseMatrix<std::complex<double>>, COLAMDOrdering<int>> solver2;
+        //     solver2.compute(jac);
+        //     std::cout << "rank of jac: " << solver2.rank() <<" n: "<<jac.rows()<< std::endl;
+        // }
+        // std::cout<<Bmat<<std::endl;
+
+        // for (int i = 0; i < Bmat.nonZeros(); i++)
+        // {
+        //     std::cout<<*(valB+i)<<std::endl;
+        // }
+
+        // Defining what we need: the four eigenvectors nearest to sigma.
+
+        ARluCompGenEig<double> dprob(nev, A, B, arcomplex<double>(sigmaR, sigmaI));
+
+        // Finding eigenvalues and eigenvectors.
+
+        dprob.FindEigenvectors();
+
+        // Printing solution.
+
+        Solution(A, B, dprob);
     }
     // void newtonIteration(const SparseMatrix<double> &jac, const VectorXd &rhs, VectorXd &u)
     // {
@@ -302,6 +366,7 @@ namespace rs1DStab
         }
 
         jac.setFromTriplets(tripletList.begin(), tripletList.end());
+        B.setFromTriplets(tripletListB.begin(), tripletListB.end());
     }
 
     void checkJacobian()

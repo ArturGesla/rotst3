@@ -19,5 +19,27 @@ add_executable(rotst drivers/main.cpp ${SRC_FILES})
 
 set(INC_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/library/inc")
 list(APPEND INC_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/../eigen")
+list(APPEND INC_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/../SuiteSparse-5.12.0/UMFPACK/Include")
+list(APPEND INC_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/../SuiteSparse-5.12.0/AMD/Include")
+list(APPEND INC_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/../SuiteSparse-5.12.0/SuiteSparse_config")
+list(APPEND INC_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/external/arpackpp-for-eigen/include")
+list(APPEND INC_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/external/arpackpp-for-eigen/examples/matrices/nonsym")
+list(APPEND INC_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/external/arpackpp-for-eigen/examples/matrices/complex")
  
 target_include_directories(rotst PUBLIC ${INC_DIRS})
+
+# # lapack search
+find_library(LAPACK_DIR NAMES openblas) #lapack is built in
+message (STATUS "lapack found at: ${LAPACK_DIR}")
+target_link_libraries(rotst ${LAPACK_DIR})
+
+# superlu search
+find_library(SUPERLU_DIR NAMES libsuperlu.so libsuperlu.so.5.3.0 PATHS "/people/gesla/git/superlu/build/SRC")
+#find_library(SUPERLU_DIR NAMES libsuperlu.so libsuperlu.so.5 libsuperlu.so.5.3.0 PATHS "/people/gesla/git/superlu/build/SRC")
+message (STATUS "superlu found at: ${SUPERLU_DIR}")
+target_link_libraries(rotst ${SUPERLU_DIR})
+
+# arpack search (probably in some local dir)
+find_library(ARPACK_DIR NAMES arpack libarpack.so.2 PATHS ${LOC_LIB_DIRS})
+message (STATUS "arpack found at: ${ARPACK_DIR}")
+target_link_libraries(rotst ${ARPACK_DIR})

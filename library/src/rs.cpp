@@ -275,9 +275,9 @@ namespace rs1D
     void saveResult(VectorXd &u)
     {
 
-        std::cout << "Saving to: " << std::filesystem::current_path() << "data.txt" << std::endl;
+        std::cout << "Saving to: " << std::filesystem::current_path() << "dataBaseFlow.txt" << std::endl;
 
-        std::ofstream myfile("data.txt");
+        std::ofstream myfile("dataBaseFlow.txt");
 
         for (int i = 0; i < u.size() / 3; i++)
         {
