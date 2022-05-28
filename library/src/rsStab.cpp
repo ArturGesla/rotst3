@@ -32,7 +32,9 @@ namespace rs1DStab
     void findev(SparseMatrix<std::complex<double>> jac, SparseMatrix<std::complex<double>> B,
                 int nev, double sigmaR, double sigmaI);
 
-    void rs1DStab(double Re, int n, double Ro, double zmax)
+    // void rs1DStab(double Re, int n, double Ro, double zmax)
+    void rs1DStab(double Re, int n, double Ro, double zmax, double sigmaR, double sigmaI,
+                  double alphaR, double alphaI, double betaR, double betaI, int nev)
     {
         {
             std::cout << "Rotst3 |Stability analysis 1D | based on Lingowood 1996" << std::endl;
@@ -45,9 +47,12 @@ namespace rs1DStab
         VectorXd phi = VectorXd::Zero(n * neq);
 
         VectorXd u(n * 3);
-        u = rs1D::rs1D(n, Ro, zmax, true);
-        std::complex<double> alpha(1.0, 0.0);
-        std::complex<double> beta(0.0, 0.0);
+        u = rs1D::rs1D(n, Ro, zmax, false);
+        // std::complex<double> alpha(1.0, 0.0);
+        // std::complex<double> beta(0.0, 0.0);
+        std::complex<double> alpha(alphaR, alphaI);
+        std::complex<double> beta(betaR, betaI);
+
         // std::complex<double> alpha(0.34, 0.0776);
         //         std::complex<double> beta(-0.1174, 0);
 
@@ -57,7 +62,7 @@ namespace rs1DStab
         checkJacobian();
 
         // J*phi=omega*phi*B
-        findev(jac, B, 25, 0.0, 0.0);
+        findev(jac, B, nev, sigmaR, sigmaI);
     }
     void findev(SparseMatrix<std::complex<double>> jac, SparseMatrix<std::complex<double>> Bmat,
                 int nev, double sigmaR, double sigmaI)
@@ -86,11 +91,11 @@ namespace rs1DStab
         CompMatrixE(n, rho, nnzb, valB, irowb, pcolb, Bmat);
         ARluNonSymMatrix<arcomplex<double>, double> B(n, nnzb, valB, irowb, pcolb);
 
-        // {
-        //     SparseQR<SparseMatrix<std::complex<double>>, COLAMDOrdering<int>> solver2;
-        //     solver2.compute(jac);
-        //     std::cout << "rank of jac: " << solver2.rank() <<" n: "<<jac.rows()<< std::endl;
-        // }
+        {
+            SparseQR<SparseMatrix<std::complex<double>>, COLAMDOrdering<int>> solver2;
+            solver2.compute(jac);
+            std::cout << "rank of jac: " << solver2.rank() << " n: " << jac.rows() << std::endl;
+        }
         // std::cout<<Bmat<<std::endl;
 
         // for (int i = 0; i < Bmat.nonZeros(); i++)
@@ -109,6 +114,44 @@ namespace rs1DStab
         // Printing solution.
 
         Solution(A, B, dprob);
+
+        
+
+        // save to file
+        int nconv = dprob.ConvergedEigenvalues();
+
+        {
+            // Printing eigenvalues.
+            std::ofstream myfile("evs.dat", std::ios_base::app);
+            // std::cout << "Eigenvalues:" << std::endl;
+            for (int i = 0; i < nconv; i++)
+            {
+                // std::cout << "  lambda[" << (i+1) << "]: " << dprob.Eigenvalue(i) << std::endl;
+                myfile << dprob.Eigenvalue(i).real() << "\t" << dprob.Eigenvalue(i).imag() << "\n";
+            }
+            // std::cout << std::endl;
+            myfile.close();
+        }
+
+        {
+            // Printing vectors.
+            std::ofstream myfile("evcs.dat");
+            // std::cout << "Eigenvalues:" << std::endl;
+            for (int j = 0; j < nconv; j++)
+            {
+                // std::cout << "  lambda[" << (i+1) << "]: " << dprob.Eigenvalue(i) << std::endl;
+                // myfile << dprob.RawEigenvector(i).real() << "\t" << dprob.RawEigenvector(i).imag() << "\n";
+                VectorXcd eigenvector(n);
+                for (size_t i = 0; i < n; i++)
+                {
+                    eigenvector(i) = dprob.Eigenvector(j, i);
+                }
+                myfile << eigenvector.real().transpose() << std::endl;
+                std::cout<<"Mag of evc "<<j<<" :"<<eigenvector.real().norm()<<"\t "<<eigenvector.imag().norm()<<std::endl;
+            }
+            // std::cout << std::endl;
+            myfile.close();
+        }
     }
     // void newtonIteration(const SparseMatrix<double> &jac, const VectorXd &rhs, VectorXd &u)
     // {
