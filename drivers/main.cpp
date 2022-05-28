@@ -34,7 +34,8 @@ int main(int argc, char *argv[])
     }
     else if (argc !=2)
     {
-        rs1DStab::rs1DStab();
+        //rs1DStab::rs1DStab();
+        rs1D::rs1D(3000000,1,30,true);
     }
 
     return 0;

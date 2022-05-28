@@ -6,6 +6,7 @@
 
 #include "Eigen/Dense"
 #include "Eigen/Sparse"
+#include "Eigen/UmfPackSupport"
 
 using namespace Eigen;
 namespace rs1D
@@ -57,25 +58,58 @@ namespace rs1D
     {
         VectorXd du;
         VectorXd mrhs = -rhs;
-        SparseLU<SparseMatrix<double>> solver;
-        solver.compute(jac);
-        if (solver.info() != Success)
-        {
-            // decomposition failed
-            std::cout << "LU failed" << std::endl;
-            return;
-        }
-        du = solver.solve(mrhs);
-        if (solver.info() != Success)
-        {
-            // solving failed
-            std::cout << "solve failed" << std::endl;
-            return;
+        // { //SparseLU
+
+        //     SparseLU<SparseMatrix<double>> solver;
+        //     solver.compute(jac);
+        //     if (solver.info() != Success)
+        //     {
+        //         // decomposition failed
+        //         std::cout << "LU failed" << std::endl;
+        //         return;
+        //     }
+        //     du = solver.solve(mrhs);
+        //     if (solver.info() != Success)
+        //     {
+        //         // solving failed
+        //         std::cout << "solve failed" << std::endl;
+        //         return;
+        //     }
+        // }
+
+        { // Umfpack
+
+            Eigen::UmfPackLU<SparseMatrix<double>> solver;
+            solver.umfpackControl()(0)=2;
+            // std::cout << solver.umfpackControl() << std::endl;
+
+            // std::cout << UMFPACK_PRL << std::endl;
+            // std::cout << UMFPACK_DEFAULT_PRL << std::endl;
+
+            solver.compute(jac);
+            if (solver.info() != Success)
+            {
+                // decomposition failed
+                std::cout << "LU failed" << std::endl;
+                return;
+            }
+            //solver.printUmfpackControl();
+            solver.printUmfpackInfo();
+            solver.printUmfpackStatus();
+
+            du = solver.solve(mrhs);
+            if (solver.info() != Success)
+            {
+                // solving failed
+                std::cout << "solve failed" << std::endl;
+                return;
+            }
         }
         u = u + du;
         if (verbose == true)
         {
             std::cout << "norm of prev rhs: " << rhs.norm() << std::endl;
+            std::cout << "max abs rhs: " << (rhs.cwiseAbs()).maxCoeff() << std::endl;
             std::cout << "eqs solved with acc: " << (jac * du + rhs).norm() << std::endl;
         }
         // {

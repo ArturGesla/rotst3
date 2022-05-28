@@ -43,3 +43,8 @@ target_link_libraries(rotst ${SUPERLU_DIR})
 find_library(ARPACK_DIR NAMES arpack libarpack.so.2 PATHS ${LOC_LIB_DIRS})
 message (STATUS "arpack found at: ${ARPACK_DIR}")
 target_link_libraries(rotst ${ARPACK_DIR})
+
+#umfpack search
+find_library(UMFPACK_DIR NAMES libumfpack.so libumfpack.so.5 libumfpack.so.5.7.1 PATHS ${LOC_LIB_DIRS})
+message (STATUS "umfpack found at: ${UMFPACK_DIR}")
+target_link_libraries(rotst ${UMFPACK_DIR})
