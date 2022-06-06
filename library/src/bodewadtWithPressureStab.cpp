@@ -64,7 +64,7 @@ namespace bwp
         calculateJacobianAndRhsAndB(u, jac, B, rhs, U, n, neq, Ro, zmax, Re, alpha, beta);
 
         // J*phi=omega*phi*B
-         findev(jac, B, nev, sigmaR, sigmaI);
+        findev(jac, B, nev, sigmaR, sigmaI);
     }
     void findev(SparseMatrix<std::complex<double>> jac, SparseMatrix<std::complex<double>> Bmat,
                 int nev, double sigmaR, double sigmaI)
@@ -266,7 +266,9 @@ namespace bwp
                 int iihzp = iih + neq;
                 int iihzm = iih - neq;
 
-                rhs(iip) = u(iif) * i * alpha + u(iif) / r + u(iig) * i * beta + (u(iihzp) - u(iihzm)) / 2.0 / hz;
+                rhs(iip) = (u(iif) + u(iifzm)) / 2.0 * i * alpha + (u(iif) + u(iifzm)) / 2.0 / r +
+                           +(u(iig) + u(iigzm)) / 2.0 * i * beta + (u(iih) - u(iihzm)) / hz;
+
                 rhs(iif) = r * U(iiF) * u(iif) * i * alpha + u(iif) * U(iiF) + U(iiG) * u(iif) * i * r * beta +
                            +U(iiH) * (u(iifzp) - u(iifzm)) / 2.0 / hz + r * u(iih) * (U(iiFzp) - U(iiFzm)) / 2.0 / hz +
                            -2.0 * U(iiG) * u(iig) +
@@ -291,16 +293,22 @@ namespace bwp
                 {
                     std::complex<double> value;
 
-                    value = 1.0 * i * alpha + 1 / r;
+                    value = (1) / 2.0 * i * alpha + (1) / 2.0 / r;
                     tripletList.push_back(Triplet<std::complex<double>>(iip, iif, value));
 
-                    value = 1.0 * i * beta;
+                    value = (1) / 2.0 * i * alpha + (1) / 2.0 / r;
+                    tripletList.push_back(Triplet<std::complex<double>>(iip, iifzm, value));
+
+                    value = (1) / 2.0 * i * beta;
                     tripletList.push_back(Triplet<std::complex<double>>(iip, iig, value));
 
-                    value = (1) / 2.0 / hz;
-                    tripletList.push_back(Triplet<std::complex<double>>(iip, iihzp, value));
+                    value = (1) / 2.0 * i * beta;
+                    tripletList.push_back(Triplet<std::complex<double>>(iip, iigzm, value));
 
-                    value = (-1) / 2.0 / hz;
+                    value = (1) / hz;
+                    tripletList.push_back(Triplet<std::complex<double>>(iip, iih, value));
+
+                    value = (-1) / hz;
                     tripletList.push_back(Triplet<std::complex<double>>(iip, iihzm, value));
                 }
 
@@ -411,12 +419,35 @@ namespace bwp
             int iihzp = iih + neq;
             int iihzm = iih - neq;
 
-            rhs(iip) = u(iip) - uBc;
+            rhs(iip) = (u(iif) + u(iifzm)) / 2.0 * i * alpha + (u(iif) + u(iifzm)) / 2.0 / r +
+                       +(u(iig) + u(iigzm)) / 2.0 * i * beta + (u(iih) - u(iihzm)) / hz;
             rhs(iif) = u(iif) - uBc;
             rhs(iig) = u(iig) - uBc;
             rhs(iih) = u(iih) - uBc;
 
-            tripletList.push_back(Triplet<std::complex<double>>(iip, iip, 1));
+            // tripletList.push_back(Triplet<std::complex<double>>(iip, iip, 1));
+            //  first
+            {
+                std::complex<double> value;
+
+                value = (1) / 2.0 * i * alpha + (1) / 2.0 / r;
+                tripletList.push_back(Triplet<std::complex<double>>(iip, iif, value));
+
+                value = (1) / 2.0 * i * alpha + (1) / 2.0 / r;
+                tripletList.push_back(Triplet<std::complex<double>>(iip, iifzm, value));
+
+                value = (1) / 2.0 * i * beta;
+                tripletList.push_back(Triplet<std::complex<double>>(iip, iig, value));
+
+                value = (1) / 2.0 * i * beta;
+                tripletList.push_back(Triplet<std::complex<double>>(iip, iigzm, value));
+
+                value = (1) / hz;
+                tripletList.push_back(Triplet<std::complex<double>>(iip, iih, value));
+
+                value = (-1) / hz;
+                tripletList.push_back(Triplet<std::complex<double>>(iip, iihzm, value));
+            }
             tripletList.push_back(Triplet<std::complex<double>>(iif, iif, 1));
             tripletList.push_back(Triplet<std::complex<double>>(iig, iig, 1));
             tripletList.push_back(Triplet<std::complex<double>>(iih, iih, 1));
@@ -456,7 +487,7 @@ namespace bwp
         // std::cout<<jac;
         double maxDiff = 0;
 
-        //std::cout<<B<<std::endl;
+        // std::cout<<B<<std::endl;
 
         for (int j = 0; j < N; j++)
         {
