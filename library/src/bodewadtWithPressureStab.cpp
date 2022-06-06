@@ -7,6 +7,7 @@
 
 #include "Eigen/Dense"
 #include "Eigen/Sparse"
+#include "unsupported/Eigen/SparseExtra"
 
 // for ev search
 #include "arcomp.h"
@@ -98,6 +99,8 @@ namespace bwp
             solver2.compute(jac);
             std::cout << "rank of jac: " << solver2.rank() << " n: " << jac.rows() << std::endl;
         }
+
+
         // std::cout<<Bmat<<std::endl;
 
         // for (int i = 0; i < Bmat.nonZeros(); i++)
@@ -118,6 +121,8 @@ namespace bwp
         Solution(A, B, dprob);
 
         // save to file
+        saveMarket(jac,"jac.dat");
+        saveMarket(Bmat,"Bmat.dat");
         int nconv = dprob.ConvergedEigenvalues();
 
         {
