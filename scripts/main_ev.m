@@ -10,7 +10,7 @@ B(nn,nn)=0; %bit not safe;
 jac=sparse(jac.data(2:end,1),jac.data(2:end,2),jac.data(2:end,3))+1i*sparse(jac.data(2:end,1),jac.data(2:end,2),jac.data(2:end,4));
 %%
 nev = 100;
-     sigma = +1.0;
+     sigma = -0.218;
      disp([num2str(nev), ' eigenvalues asked with a shift ',num2str(sigma)])
      tic
      [Vp lbda] = eigs(jac,B,nev,sigma);
@@ -25,7 +25,7 @@ nev = 100;
      
      %%
      x=real(Vp(:,b))
-     plot(x(1:4:end))
+     plot(x(5:6:end))
 
 
 

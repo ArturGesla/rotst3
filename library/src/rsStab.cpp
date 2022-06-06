@@ -8,6 +8,7 @@
 
 #include "Eigen/Dense"
 #include "Eigen/Sparse"
+#include "unsupported/Eigen/SparseExtra"
 
 // for ev search
 #include "arcomp.h"
@@ -60,6 +61,9 @@ namespace rs1DStab
 
         // check whether jacobian is correct
         checkJacobian();
+
+        saveMarket(jac, "jac.dat");
+        saveMarket(B, "Bmat.dat");
 
         // J*phi=omega*phi*B
         findev(jac, B, nev, sigmaR, sigmaI);

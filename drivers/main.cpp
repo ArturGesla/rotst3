@@ -40,8 +40,10 @@ int main(int argc, char *argv[])
     //     rs1DStab::rs1DStab();
     // }
 
-    bwp::bwpBaseFlow();
+    // bwp::bwpBaseFlow();
     bwp::bwpStab();
+
+    // rs1DStab::rs1DStab();
 
     return 0;
 }
