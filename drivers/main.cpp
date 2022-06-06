@@ -41,6 +41,7 @@ int main(int argc, char *argv[])
     // }
 
     bwp::bwpBaseFlow();
+    bwp::bwpStab();
 
     return 0;
 }

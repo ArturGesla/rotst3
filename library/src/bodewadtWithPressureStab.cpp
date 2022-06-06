@@ -35,13 +35,14 @@ namespace bwp
     void bwpStab(double Re, int n, double zmax, double sigmaR, double sigmaI,
                  double alphaR, double alphaI, double betaR, double betaI, int nev)
     {
+        double Ro = 1; // bodewadt
+
         {
             std::cout << "Rotst3 |Stability analysis 1D | based on Lingowood 1996" << std::endl;
             std::cout << "Bodewadt base flow with pressure" << std::endl;
             std::cout << "n: " << n << " Ro: " << Ro << " zmax: " << zmax << " Re: " << Re << std::endl;
         }
-        int neq = 4;   // conti, r,th,z mom
-        double Ro = 1; // bodewadt
+        int neq = 4; // conti, r,th,z mom
         SparseMatrix<std::complex<double>> jac(neq * n, neq * n);
         SparseMatrix<std::complex<double>> B(neq * n, neq * n);
         VectorXcd rhs = VectorXd::Zero(n * neq);
@@ -57,13 +58,13 @@ namespace bwp
         // std::complex<double> alpha(0.34, 0.0776);
         // std::complex<double> beta(-0.1174, 0);
 
-        calculateJacobianAndRhsAndB(u, jac, B, rhs, U, n, neq, Ro, zmax, Re, alpha, beta);
-
         // check whether jacobian is correct
         checkJacobian();
 
+        calculateJacobianAndRhsAndB(u, jac, B, rhs, U, n, neq, Ro, zmax, Re, alpha, beta);
+
         // J*phi=omega*phi*B
-        findev(jac, B, nev, sigmaR, sigmaI);
+         findev(jac, B, nev, sigmaR, sigmaI);
     }
     void findev(SparseMatrix<std::complex<double>> jac, SparseMatrix<std::complex<double>> Bmat,
                 int nev, double sigmaR, double sigmaI)
@@ -193,9 +194,9 @@ namespace bwp
         // VectorXd u = VectorXd::Zero(3 * n);
         // double zmax = 20;
 
-        if (u.size() != phi.size())
+        if (u.size() != U.size())
         {
-            throw std::invalid_argument("U and phi size don't match.");
+            throw std::invalid_argument("U and u size don't match.");
         }
         double hz = zmax / double(n - 1);
 
@@ -231,169 +232,24 @@ namespace bwp
             tripletList.push_back(Triplet<std::complex<double>>(iif, iif, 1));
             tripletList.push_back(Triplet<std::complex<double>>(iig, iig, 1));
             tripletList.push_back(Triplet<std::complex<double>>(iih, iih, 1));
-
-            // main body
-            {
-                // ii - point
-                for (int ii = 1; ii < n - 1; ii++)
-                {
-
-                    int iiF = ii * neq; // from external data
-                    int iiG = iiF + 1;
-                    int iiH = iiG + 1;
-
-                    int iiFzp = iiF + neq;
-                    int iiFzm = iiF - neq;
-                    int iiGzp = iiG + neq;
-                    int iiGzm = iiG - neq;
-                    int iiHzp = iiH + neq;
-                    int iiHzm = iiH - neq;
-
-                    int iip = ii * neq;
-                    int iipzp = iip + neq;
-                    int iipzm = iip - neq;
-
-                    int iif = ii * neq + 1;
-                    int iifzp = iif + neq;
-                    int iifzm = iif - neq;
-
-                    int iig = ii * neq + 2;
-                    int iigzp = iig + neq;
-                    int iigzm = iig - neq;
-
-                    int iih = ii * neq + 3;
-                    int iihzp = iih + neq;
-                    int iihzm = iih - neq;
-
-                    rhs(iip) = u(iif) * i * alpha + u(iif) / r + u(iig) * i * beta + (u(iihzp) - u(iihzm)) / 2.0 / hz;
-                    rhs(iif) = r * U(iiF) * u(iif) * i * alpha + u(iif) * U(iiF) + U(iiG) * u(iif) * i * r * beta +
-                               +U(iiH) * (u(iifzp) - u(iifzm)) / 2.0 / hz + r * u(iih) * (U(iiFzp) - U(iiFzm)) / 2.0 / hz +
-                               -2.0 * U(iiG) * u(iig) +
-                               -(-i * alpha * u(iip) - u(iif) / r / r + i * u(iif) * alpha / r +
-                                 -alpha * alpha * u(iif) - beta * beta * u(iif) +
-                                 +(u(iifzp) - 2 * u(iif) + u(iifzm)) / hz / hz - 2.0 / r * u(iig) * i * beta);
-
-                    rhs(iig) = r * U(iiF) * u(iig) * i * alpha + u(iif) * U(iiG) + U(iiG) * u(iig) * i * r * beta +
-                               +U(iiH) * (u(iigzp) - u(iigzm)) / 2.0 / hz + r * u(iih) * (U(iiGzp) - U(iiGzm)) / 2.0 / hz +
-                               +U(iiF) * u(iig) + u(iif) * U(iiG) +
-                               -(-i * beta * u(iip) - u(iig) / r / r + i * u(iig) * alpha / r +
-                                 -alpha * alpha * u(iig) - beta * beta * u(iig) +
-                                 +(u(iigzp) - 2 * u(iig) + u(iigzm)) / hz / hz + 2.0 / r * u(iif) * i * beta);
-
-                    rhs(iih) = r * U(iiF) * u(iih) * i * alpha + U(iiG) * u(iih) * i * r * beta +
-                               +U(iiH) * (u(iihzp) - u(iihzm)) / 2.0 / hz + u(iih) * (U(iiGzp) - U(iiGzm)) / 2.0 / hz +
-                               -(-(u(iipzp) - u(iipzm)) / 2.0 / hz + i * u(iih) * alpha / r +
-                                 -alpha * alpha * u(iih) - beta * beta * u(iih) +
-                                 +(u(iihzp) - 2 * u(iih) + u(iihzm)) / hz / hz);
-
-                    // first
-                    {
-                        std::complex<double> value;
-
-                        value = 1 * i * alpha + 1 / r;
-                        tripletList.push_back(Triplet<std::complex<double>>(iip, iif, value));
-
-                        value = 1 * i * beta;
-                        tripletList.push_back(Triplet<std::complex<double>>(iip, iig, value));
-
-                        value = (1) / 2.0 / hz;
-                        tripletList.push_back(Triplet<std::complex<double>>(iip, iihzp, value));
-
-                        value = (-1) / 2.0 / hz;
-                        tripletList.push_back(Triplet<std::complex<double>>(iip, iihzm, value));
-                    }
-
-                    // second
-                    {
-                        std::complex<double> value;
-
-                        value = -(-i * alpha * 1);
-                        tripletList.push_back(Triplet<std::complex<double>>(iif, iip, value));
-
-                        value = r * U(iiF) * 1 * i * alpha + 1 * U(iiF) + U(iiG) * 1 * i * r * beta +
-                                -(-1 / r / r + i * 1 * alpha / r +
-                                  -alpha * alpha * 1 - beta * beta * 1 +
-                                  +(-2) / hz / hz);
-                        tripletList.push_back(Triplet<std::complex<double>>(iif, iif, value));
-
-                        value = -2.0 * U(iiG) * 1 +
-                                -(-2.0 / r * 1 * i * beta);
-                        tripletList.push_back(Triplet<std::complex<double>>(iif, iig, value));
-
-                        value = r * 1 * (U(iiFzp) - U(iiFzm)) / 2.0 / hz;
-                        tripletList.push_back(Triplet<std::complex<double>>(iif, iih, value));
-
-                        value = U(iiH) * (1) / 2.0 / hz - ((1) / hz / hz);
-                        tripletList.push_back(Triplet<std::complex<double>>(iif, iifzp, value));
-
-                        value = U(iiH) * (-1) / 2.0 / hz - ((1) / hz / hz);
-                        tripletList.push_back(Triplet<std::complex<double>>(iif, iifzm, value));
-
-                        tripletListB.push_back(Triplet<std::complex<double>>(iif, iif, i));
-                    }
-
-                    // third
-                    {
-                        std::complex<double> value;
-
-                        value = -(-i * beta * 1);
-                        tripletList.push_back(Triplet<std::complex<double>>(iig, iip, value));
-
-                        value = 1 * U(iiG) +
-                                1 * U(iiG) +
-                                -(2.0 / r * 1 * i * beta);
-                        tripletList.push_back(Triplet<std::complex<double>>(iig, iif, value));
-
-                        value = r * U(iiF) * 1 * i * alpha + U(iiG) * 1 * i * r * beta +
-                                +U(iiF) * 1 +
-                                -(-1 / r / r + i * 1 * alpha / r +
-                                  -alpha * alpha * 1 - beta * beta * 1 +
-                                  +(-2) / hz / hz);
-                        tripletList.push_back(Triplet<std::complex<double>>(iig, iig, value));
-
-                        value = r * 1 * (U(iiGzp) - U(iiGzm)) / 2.0 / hz;
-                        tripletList.push_back(Triplet<std::complex<double>>(iig, iih, value));
-
-                        value = U(iiH) * (1) / 2.0 / hz - ((1) / hz / hz);
-                        tripletList.push_back(Triplet<std::complex<double>>(iig, iigzp, value));
-
-                        value = U(iiH) * (-1) / 2.0 / hz - ((1) / hz / hz);
-                        tripletList.push_back(Triplet<std::complex<double>>(iig, iigzm, value));
-
-                        tripletListB.push_back(Triplet<std::complex<double>>(iig, iig, i));
-                    }
-                    // fourth
-                    {
-                        std::complex<double> value;
-
-                        value = -(-(1) / 2.0 / hz);
-                        tripletList.push_back(Triplet<std::complex<double>>(iih, iipzp, value));
-
-                        value = -(-(-1) / 2.0 / hz);
-                        tripletList.push_back(Triplet<std::complex<double>>(iih, iipzm, value));
-
-                        value = r * U(iiF) * 1 * i * alpha + U(iiG) * 1 * i * r * beta +
-                                +1 * (U(iiGzp) - U(iiGzm)) / 2.0 / hz +
-                                -(i * 1 * alpha / r +
-                                  -alpha * alpha * 1 - beta * beta * 1 +
-                                  +(-2) / hz / hz);
-                        tripletList.push_back(Triplet<std::complex<double>>(iih, iih, value));
-
-                        value = U(iiH) * (1) / 2.0 / hz - (+(1) / hz / hz);
-                        tripletList.push_back(Triplet<std::complex<double>>(iih, iihzp, value));
-
-                        value = U(iiH) * (-1) / 2.0 / hz - (+(1) / hz / hz);
-                        tripletList.push_back(Triplet<std::complex<double>>(iih, iihzm, value));
-
-                        tripletListB.push_back(Triplet<std::complex<double>>(iih, iih, i));
-                    }
-                }
-            }
-
-            // Boundaries | Top
+        }
+        // main body
+        {
+            // ii - point
+            for (int ii = 1; ii < n - 1; ii++)
             {
 
-                int i = n - 1;
+                int iiF = ii * neq; // from external data
+                int iiG = iiF + 1;
+                int iiH = iiG + 1;
+
+                int iiFzp = iiF + neq;
+                int iiFzm = iiF - neq;
+                int iiGzp = iiG + neq;
+                int iiGzm = iiG - neq;
+                int iiHzp = iiH + neq;
+                int iiHzm = iiH - neq;
+
                 int iip = ii * neq;
                 int iipzp = iip + neq;
                 int iipzm = iip - neq;
@@ -410,98 +266,257 @@ namespace bwp
                 int iihzp = iih + neq;
                 int iihzm = iih - neq;
 
-                rhs(iip) = u(iip) - uBc;
-                rhs(iif) = u(iif) - uBc;
-                rhs(iig) = u(iig) - uBc;
-                rhs(iih) = u(iih) - uBc;
+                rhs(iip) = u(iif) * i * alpha + u(iif) / r + u(iig) * i * beta + (u(iihzp) - u(iihzm)) / 2.0 / hz;
+                rhs(iif) = r * U(iiF) * u(iif) * i * alpha + u(iif) * U(iiF) + U(iiG) * u(iif) * i * r * beta +
+                           +U(iiH) * (u(iifzp) - u(iifzm)) / 2.0 / hz + r * u(iih) * (U(iiFzp) - U(iiFzm)) / 2.0 / hz +
+                           -2.0 * U(iiG) * u(iig) +
+                           -(-i * alpha * u(iip) - u(iif) / r / r + i * u(iif) * alpha / r +
+                             -alpha * alpha * u(iif) - beta * beta * u(iif) +
+                             +(u(iifzp) - 2 * u(iif) + u(iifzm)) / hz / hz - 2.0 / r * u(iig) * i * beta);
 
-                tripletList.push_back(Triplet<std::complex<double>>(iip, iip, 1));
-                tripletList.push_back(Triplet<std::complex<double>>(iif, iif, 1));
-                tripletList.push_back(Triplet<std::complex<double>>(iig, iig, 1));
-                tripletList.push_back(Triplet<std::complex<double>>(iih, iih, 1));
-            }
+                rhs(iig) = r * U(iiF) * u(iig) * i * alpha + u(iif) * U(iiG) + U(iiG) * u(iig) * i * r * beta +
+                           +U(iiH) * (u(iigzp) - u(iigzm)) / 2.0 / hz + r * u(iih) * (U(iiGzp) - U(iiGzm)) / 2.0 / hz +
+                           +U(iiF) * u(iig) + u(iif) * U(iiG) +
+                           -(-i * beta * u(iip) - u(iig) / r / r + i * u(iig) * alpha / r +
+                             -alpha * alpha * u(iig) - beta * beta * u(iig) +
+                             +(u(iigzp) - 2 * u(iig) + u(iigzm)) / hz / hz + 2.0 / r * u(iif) * i * beta);
 
-            jac.setFromTriplets(tripletList.begin(), tripletList.end());
-            B.setFromTriplets(tripletListB.begin(), tripletListB.end());
-        }
+                rhs(iih) = r * U(iiF) * u(iih) * i * alpha + U(iiG) * u(iih) * i * r * beta +
+                           +U(iiH) * (u(iihzp) - u(iihzm)) / 2.0 / hz + u(iih) * (U(iiGzp) - U(iiGzm)) / 2.0 / hz +
+                           -(-(u(iipzp) - u(iipzm)) / 2.0 / hz + i * u(iih) * alpha / r +
+                             -alpha * alpha * u(iih) - beta * beta * u(iih) +
+                             +(u(iihzp) - 2 * u(iih) + u(iihzm)) / hz / hz);
 
-        void checkJacobian()
-        {
-            double eps = 1e-6;
-
-            int n = 4;
-            int neq = 6;
-            SparseMatrix<std::complex<double>> jac(neq * n, neq * n);
-            SparseMatrix<std::complex<double>> B(neq * n, neq * n);
-
-            VectorXcd rhs = VectorXd::Zero(n * neq);
-            VectorXd phi = VectorXd::Ones(n * neq);
-
-            double Ro = 1;
-            double zmax = 21;
-
-            //       VectorXd u(n * 3);
-            // u = rs1D::rs1D(n, Ro, zmax);
-            VectorXd u = VectorXd::Ones(n * 3);
-
-            std::complex<double> alpha(1, 1);
-            std::complex<double> beta(1, 1);
-
-            double Re = 10;
-
-            calculateJacobianAndRhsAndB(phi, jac, B, rhs, u, n, 6, Ro, zmax, Re, alpha, beta);
-
-            int N = n * neq;
-
-            // std::cout<<jac;
-            double maxDiff = 0;
-
-            for (int j = 0; j < N; j++)
-            {
-                VectorXd phi1 = phi;
-                calculateJacobianAndRhsAndB(phi1, jac, B, rhs, u, n, 6, Ro, zmax, Re, alpha, beta);
-                VectorXcd rhs1 = rhs;
-
-                VectorXd phi2 = phi;
-                phi2(j) += eps;
-                calculateJacobianAndRhsAndB(phi2, jac, B, rhs, u, n, 6, Ro, zmax, Re, alpha, beta);
-                VectorXcd rhs2 = rhs;
-
-                VectorXcd correctColumn = (rhs2 - rhs1) / eps;
-                for (int i = 0; i < N; i++)
+                // first
                 {
-                    double diff = std::abs(jac.coeff(i, j) - correctColumn(i));
-                    maxDiff = std::max(diff, maxDiff);
-                    if (diff > eps * 3)
-                    {
-                        std::cout << rhs1 << std::endl;
-                        std::cout << std::endl;
-                        std::cout << rhs2 << std::endl;
-                        std::cout << std::endl;
-                        std::cout << jac << std::endl;
+                    std::complex<double> value;
 
-                        std::cout << "i: " << i << " j: " << j << " jac: " << jac.coeff(i, j) << " corr: " << correctColumn(i) << std::endl;
-                        throw std::invalid_argument("lol");
-                        return;
-                    }
+                    value = 1.0 * i * alpha + 1 / r;
+                    tripletList.push_back(Triplet<std::complex<double>>(iip, iif, value));
+
+                    value = 1.0 * i * beta;
+                    tripletList.push_back(Triplet<std::complex<double>>(iip, iig, value));
+
+                    value = (1) / 2.0 / hz;
+                    tripletList.push_back(Triplet<std::complex<double>>(iip, iihzp, value));
+
+                    value = (-1) / 2.0 / hz;
+                    tripletList.push_back(Triplet<std::complex<double>>(iip, iihzm, value));
+                }
+
+                // second
+                {
+                    std::complex<double> value;
+
+                    value = -(-i * alpha * 1.0);
+                    tripletList.push_back(Triplet<std::complex<double>>(iif, iip, value));
+
+                    value = r * U(iiF) * 1.0 * i * alpha + 1.0 * U(iiF) + U(iiG) * 1.0 * i * r * beta +
+                            -(-1 / r / r + i * 1.0 * alpha / r +
+                              -alpha * alpha * 1.0 - beta * beta * 1.0 +
+                              +(-2) / hz / hz);
+                    tripletList.push_back(Triplet<std::complex<double>>(iif, iif, value));
+
+                    value = -2.0 * U(iiG) * 1.0 +
+                            -(-2.0 / r * 1.0 * i * beta);
+                    tripletList.push_back(Triplet<std::complex<double>>(iif, iig, value));
+
+                    value = r * 1.0 * (U(iiFzp) - U(iiFzm)) / 2.0 / hz;
+                    tripletList.push_back(Triplet<std::complex<double>>(iif, iih, value));
+
+                    value = U(iiH) * (1) / 2.0 / hz - ((1) / hz / hz);
+                    tripletList.push_back(Triplet<std::complex<double>>(iif, iifzp, value));
+
+                    value = U(iiH) * (-1) / 2.0 / hz - ((1) / hz / hz);
+                    tripletList.push_back(Triplet<std::complex<double>>(iif, iifzm, value));
+
+                    tripletListB.push_back(Triplet<std::complex<double>>(iif, iif, i));
+                }
+
+                // third
+                {
+                    std::complex<double> value;
+
+                    value = -(-i * beta * 1.0);
+                    tripletList.push_back(Triplet<std::complex<double>>(iig, iip, value));
+
+                    value = 1.0 * U(iiG) +
+                            1.0 * U(iiG) +
+                            -(2.0 / r * 1.0 * i * beta);
+                    tripletList.push_back(Triplet<std::complex<double>>(iig, iif, value));
+
+                    value = r * U(iiF) * 1.0 * i * alpha + U(iiG) * 1.0 * i * r * beta +
+                            +U(iiF) * 1.0 +
+                            -(-1 / r / r + i * 1.0 * alpha / r +
+                              -alpha * alpha * 1.0 - beta * beta * 1.0 +
+                              +(-2) / hz / hz);
+                    tripletList.push_back(Triplet<std::complex<double>>(iig, iig, value));
+
+                    value = r * 1.0 * (U(iiGzp) - U(iiGzm)) / 2.0 / hz;
+                    tripletList.push_back(Triplet<std::complex<double>>(iig, iih, value));
+
+                    value = U(iiH) * (1) / 2.0 / hz - ((1) / hz / hz);
+                    tripletList.push_back(Triplet<std::complex<double>>(iig, iigzp, value));
+
+                    value = U(iiH) * (-1) / 2.0 / hz - ((1) / hz / hz);
+                    tripletList.push_back(Triplet<std::complex<double>>(iig, iigzm, value));
+
+                    tripletListB.push_back(Triplet<std::complex<double>>(iig, iig, i));
+                }
+                // fourth
+                {
+                    std::complex<double> value;
+
+                    value = -(-(1) / 2.0 / hz);
+                    tripletList.push_back(Triplet<std::complex<double>>(iih, iipzp, value));
+
+                    value = -(-(-1) / 2.0 / hz);
+                    tripletList.push_back(Triplet<std::complex<double>>(iih, iipzm, value));
+
+                    value = r * U(iiF) * 1.0 * i * alpha + U(iiG) * 1.0 * i * r * beta +
+                            +1.0 * (U(iiGzp) - U(iiGzm)) / 2.0 / hz +
+                            -(i * 1.0 * alpha / r +
+                              -alpha * alpha * 1.0 - beta * beta * 1.0 +
+                              +(-2) / hz / hz);
+                    tripletList.push_back(Triplet<std::complex<double>>(iih, iih, value));
+
+                    value = U(iiH) * (1) / 2.0 / hz - (+(1) / hz / hz);
+                    tripletList.push_back(Triplet<std::complex<double>>(iih, iihzp, value));
+
+                    value = U(iiH) * (-1) / 2.0 / hz - (+(1) / hz / hz);
+                    tripletList.push_back(Triplet<std::complex<double>>(iih, iihzm, value));
+
+                    tripletListB.push_back(Triplet<std::complex<double>>(iih, iih, i));
                 }
             }
-            std::cout << "Jacobian for stability analysis correct. Max diff: " << maxDiff << std::endl;
         }
 
-        // void saveResult(VectorXd &u)
-        // {
+        // Boundaries | Top
+        {
 
-        //     std::cout << "Saving to: " << std::filesystem::current_path() << "data.txt" << std::endl;
+            int ii = n - 1;
+            int iip = ii * neq;
+            int iipzp = iip + neq;
+            int iipzm = iip - neq;
 
-        //     std::ofstream myfile("data.txt");
+            int iif = ii * neq + 1;
+            int iifzp = iif + neq;
+            int iifzm = iif - neq;
 
-        //     for (int i = 0; i < u.size() / 3; i++)
-        //     {
-        //         int ii = i * 3;
-        //         myfile << u(ii) << "\t" << u(ii + 1) << "\t" << u(ii + 2) << "\n";
-        //     }
-        //     myfile.close();
-        // }
+            int iig = ii * neq + 2;
+            int iigzp = iig + neq;
+            int iigzm = iig - neq;
 
-    } // namespace
+            int iih = ii * neq + 3;
+            int iihzp = iih + neq;
+            int iihzm = iih - neq;
+
+            rhs(iip) = u(iip) - uBc;
+            rhs(iif) = u(iif) - uBc;
+            rhs(iig) = u(iig) - uBc;
+            rhs(iih) = u(iih) - uBc;
+
+            tripletList.push_back(Triplet<std::complex<double>>(iip, iip, 1));
+            tripletList.push_back(Triplet<std::complex<double>>(iif, iif, 1));
+            tripletList.push_back(Triplet<std::complex<double>>(iig, iig, 1));
+            tripletList.push_back(Triplet<std::complex<double>>(iih, iih, 1));
+        }
+
+        jac.setFromTriplets(tripletList.begin(), tripletList.end());
+        B.setFromTriplets(tripletListB.begin(), tripletListB.end());
+    }
+
+    void checkJacobian()
+    {
+        double eps = 1e-8;
+
+        int n = 4;
+        int neq = 4;
+        SparseMatrix<std::complex<double>> jac(neq * n, neq * n);
+        SparseMatrix<std::complex<double>> B(neq * n, neq * n);
+
+        VectorXcd rhs = VectorXd::Zero(n * neq);
+        VectorXd phi = VectorXd::Ones(n * neq);
+
+        double Ro = 1;
+        double zmax = 21;
+
+        //       VectorXd u(n * 3);
+        // u = rs1D::rs1D(n, Ro, zmax);
+        VectorXd u = VectorXd::Random(n * neq);
+
+        std::complex<double> alpha(1, 1);
+        std::complex<double> beta(1, 1);
+
+        double Re = 10;
+        calculateJacobianAndRhsAndB(phi, jac, B, rhs, u, n, neq, Ro, zmax, Re, alpha, beta);
+
+        int N = n * neq;
+
+        // std::cout<<jac;
+        double maxDiff = 0;
+
+        //std::cout<<B<<std::endl;
+
+        for (int j = 0; j < N; j++)
+        {
+            VectorXd phi1 = phi;
+            calculateJacobianAndRhsAndB(phi1, jac, B, rhs, u, n, neq, Ro, zmax, Re, alpha, beta);
+            VectorXcd rhs1 = rhs;
+
+            VectorXd phi2 = phi;
+            phi2(j) += eps;
+            calculateJacobianAndRhsAndB(phi2, jac, B, rhs, u, n, neq, Ro, zmax, Re, alpha, beta);
+            VectorXcd rhs2 = rhs;
+
+            VectorXcd correctColumn = (rhs2 - rhs1) / eps;
+            for (int i = 0; i < N; i++)
+            {
+                double diff = std::abs(jac.coeff(i, j) - correctColumn(i));
+                maxDiff = std::max(diff, maxDiff);
+                if (diff > eps * 10)
+                {
+                    std::cout << rhs1 << std::endl;
+                    std::cout << std::endl;
+                    std::cout << rhs2 << std::endl;
+                    std::cout << std::endl;
+                    std::cout << jac << std::endl;
+
+                    std::cout << "i: " << i << " j: " << j << " jac: " << jac.coeff(i, j) << " corr: " << correctColumn(i) << std::endl;
+                    std::cout << "diff: " << diff << std::endl;
+                    std::cout.precision(17);
+
+                    std::cout << std::fixed << rhs1(i) << std::endl;
+                    std::cout << std::fixed << rhs2(i) << std::endl;
+
+                    std::cout << std::fixed << phi1(i) << std::endl;
+                    std::cout << std::fixed << phi2(i) << std::endl;
+
+                    std::cout << std::scientific << rhs1(i) - rhs2(i) << std::endl;
+                    std::cout << std::fixed << (rhs1(i).real() - rhs2(i).real()) / eps << std::endl;
+                    std::cout << std::fixed << 1e-12 / 1e-12 << std::endl;
+
+                    throw std::invalid_argument("Jacobian totally not correct.");
+                    return;
+                }
+            }
+        }
+        std::cout << "Jacobian for stability analysis correct. Max diff: " << maxDiff << std::endl;
+    }
+
+    // void saveResult(VectorXd &u)
+    // {
+
+    //     std::cout << "Saving to: " << std::filesystem::current_path() << "data.txt" << std::endl;
+
+    //     std::ofstream myfile("data.txt");
+
+    //     for (int i = 0; i < u.size() / 3; i++)
+    //     {
+    //         int ii = i * 3;
+    //         myfile << u(ii) << "\t" << u(ii + 1) << "\t" << u(ii + 2) << "\n";
+    //     }
+    //     myfile.close();
+    // }
+
+} // namespace
