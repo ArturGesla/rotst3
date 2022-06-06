@@ -19,6 +19,13 @@ nev = 100;
 
      %lbdaMaster=[lbdaMaster,lbda];
      save("data.mat","lbda","Vp")
+     plot(lbda,'x')
+     [a,b]=max(imag(lbda));
+     lbda(b)
+     
+     %%
+     x=real(Vp(:,b))
+     plot(x(1:4:end))
 
 
 
