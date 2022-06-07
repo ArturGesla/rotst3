@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <fstream>
-#include <filesystem>
+//#include <filesystem>
 #include <complex>
 
 #include "Eigen/Dense"
@@ -227,12 +227,12 @@ namespace bwp
             int iig = i * neq + 2; // g,thmom
             int iih = i * neq + 3; // h,zmom
 
-            //rhs(iip) = u(iip) - uBc;
+            rhs(iip) = u(iip) - uBc;
             rhs(iif) = u(iif) - uBc;
             rhs(iig) = u(iig) - uBc;
             rhs(iih) = u(iih) - uBc;
 
-            //tripletList.push_back(Triplet<std::complex<double>>(iip, iip, 1));
+            tripletList.push_back(Triplet<std::complex<double>>(iip, iip, 1));
             tripletList.push_back(Triplet<std::complex<double>>(iif, iif, 1));
             tripletList.push_back(Triplet<std::complex<double>>(iig, iig, 1));
             tripletList.push_back(Triplet<std::complex<double>>(iih, iih, 1));
@@ -279,20 +279,20 @@ namespace bwp
                 rhs(iif) = r * U(iiF) * u(iif) * i * alpha + u(iif) * U(iiF) + U(iiG) * u(iif) * i * r * beta +
                            +U(iiH) * (u(iifzp) - u(iifzm)) / 2.0 / hz + r * u(iih) * (U(iiFzp) - U(iiFzm)) / 2.0 / hz +
                            -2.0 * U(iiG) * u(iig) +
-                           -(-i * alpha * u(iip) - u(iif) / r / r + i * u(iif) * alpha / r +
+                           -(-i * alpha * (u(iip) + u(iipzp)) / 2.0 - u(iif) / r / r + i * u(iif) * alpha / r +
                              -alpha * alpha * u(iif) - beta * beta * u(iif) +
                              +(u(iifzp) - 2 * u(iif) + u(iifzm)) / hz / hz - 2.0 / r * u(iig) * i * beta);
 
                 rhs(iig) = r * U(iiF) * u(iig) * i * alpha + u(iif) * U(iiG) + U(iiG) * u(iig) * i * r * beta +
                            +U(iiH) * (u(iigzp) - u(iigzm)) / 2.0 / hz + r * u(iih) * (U(iiGzp) - U(iiGzm)) / 2.0 / hz +
                            +U(iiF) * u(iig) + u(iif) * U(iiG) +
-                           -(-i * beta * u(iip) - u(iig) / r / r + i * u(iig) * alpha / r +
+                           -(-i * beta * (u(iip) + u(iipzp)) / 2.0 - u(iig) / r / r + i * u(iig) * alpha / r +
                              -alpha * alpha * u(iig) - beta * beta * u(iig) +
                              +(u(iigzp) - 2 * u(iig) + u(iigzm)) / hz / hz + 2.0 / r * u(iif) * i * beta);
 
                 rhs(iih) = r * U(iiF) * u(iih) * i * alpha + U(iiG) * u(iih) * i * r * beta +
                            +U(iiH) * (u(iihzp) - u(iihzm)) / 2.0 / hz + u(iih) * (U(iiGzp) - U(iiGzm)) / 2.0 / hz +
-                           -(-(u(iipzp) - u(iipzm)) / 2.0 / hz + i * u(iih) * alpha / r +
+                           -(-(u(iipzp) - u(iip)) / hz + i * u(iih) * alpha / r +
                              -alpha * alpha * u(iih) - beta * beta * u(iih) +
                              +(u(iihzp) - 2 * u(iih) + u(iihzm)) / hz / hz);
 
@@ -337,8 +337,11 @@ namespace bwp
                 {
                     std::complex<double> value;
 
-                    value = -(-i * alpha * 1.0);
+                    value = -(-i * alpha * 1.0 / 2.0);
                     tripletList.push_back(Triplet<std::complex<double>>(iif, iip, value));
+
+                    value = -(-i * alpha * 1.0 / 2.0);
+                    tripletList.push_back(Triplet<std::complex<double>>(iif, iipzp, value));
 
                     value = r * U(iiF) * 1.0 * i * alpha + 1.0 * U(iiF) + U(iiG) * 1.0 * i * r * beta +
                             -(-1 / r / r + i * 1.0 * alpha / r +
@@ -366,8 +369,11 @@ namespace bwp
                 {
                     std::complex<double> value;
 
-                    value = -(-i * beta * 1.0);
+                    value = -(-i * beta * 1.0 / 2.0);
                     tripletList.push_back(Triplet<std::complex<double>>(iig, iip, value));
+
+                    value = -(-i * beta * 1.0 / 2.0);
+                    tripletList.push_back(Triplet<std::complex<double>>(iig, iipzp, value));
 
                     value = 1.0 * U(iiG) +
                             1.0 * U(iiG) +
@@ -396,11 +402,11 @@ namespace bwp
                 {
                     std::complex<double> value;
 
-                    value = -(-(1) / 2.0 / hz);
+                    value = -(-(1) / hz);
                     tripletList.push_back(Triplet<std::complex<double>>(iih, iipzp, value));
 
-                    value = -(-(-1) / 2.0 / hz);
-                    tripletList.push_back(Triplet<std::complex<double>>(iih, iipzm, value));
+                    value = -(-(-1) / hz);
+                    tripletList.push_back(Triplet<std::complex<double>>(iih, iip, value));
 
                     value = r * U(iiF) * 1.0 * i * alpha + U(iiG) * 1.0 * i * r * beta +
                             +1.0 * (U(iiGzp) - U(iiGzm)) / 2.0 / hz +
@@ -442,13 +448,13 @@ namespace bwp
 
             rhs(iip) = (u(iif) + u(iifzm)) / 2.0 * i * alpha + (u(iif) + u(iifzm)) / 2.0 / r +
                       +(u(iig) + u(iigzm)) / 2.0 * i * beta + (u(iih) - u(iihzm)) / hz;
-            //rhs(iip)=u(iip)-uBc;
+             //rhs(iip)=u(iip)-uBc;
             rhs(iif) = u(iif) - uBc;
             rhs(iig) = u(iig) - uBc;
             rhs(iih) = u(iih) - uBc;
 
-            //tripletList.push_back(Triplet<std::complex<double>>(iip, iip, 1));
-            //  first
+             //tripletList.push_back(Triplet<std::complex<double>>(iip, iip, 1));
+            //   first
             {
                 std::complex<double> value;
 
@@ -469,23 +475,23 @@ namespace bwp
 
                 value = (-1) / hz;
                 tripletList.push_back(Triplet<std::complex<double>>(iip, iihzm, value));
-            }
+            } //shouldn't this give not fullrank?
             tripletList.push_back(Triplet<std::complex<double>>(iif, iif, 1));
             tripletList.push_back(Triplet<std::complex<double>>(iig, iig, 1));
             tripletList.push_back(Triplet<std::complex<double>>(iih, iih, 1));
         }
-        //boundaries addon
-        {
-            int i = n-1;
-            int iip = i * neq;     // p,conti
-            int iif = i * neq + 1; // f,rmom
-            int iig = i * neq + 2; // g,thmom
-            int iih = i * neq + 3; // h,zmom
+        // boundaries addon
+        // {
+        //     int i = n - 1;
+        //     int iip = i * neq;     // p,conti
+        //     int iif = i * neq + 1; // f,rmom
+        //     int iig = i * neq + 2; // g,thmom
+        //     int iih = i * neq + 3; // h,zmom
 
-            rhs(0) = u(iip) - uBc;
-        
-            tripletList.push_back(Triplet<std::complex<double>>(0, iip, 1));
-        }
+        //     rhs(0) = u(iip) - uBc;
+
+        //     tripletList.push_back(Triplet<std::complex<double>>(0, iip, 1));
+        // }
 
         jac.setFromTriplets(tripletList.begin(), tripletList.end());
         B.setFromTriplets(tripletListB.begin(), tripletListB.end());

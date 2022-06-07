@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <fstream>
-#include <filesystem>
+//#include <filesystem>
 
 #include "Eigen/Dense"
 #include "Eigen/Sparse"
@@ -308,7 +308,7 @@ namespace bwp
     void saveResult(VectorXd &u, VectorXd &p)
     {
 
-        std::cout << "Saving to: " << std::filesystem::current_path() << "dataBaseFlowPress.txt" << std::endl;
+        //std::cout << "Saving to: " << std::filesystem::current_path() << "dataBaseFlowPress.txt" << std::endl;
 
         std::ofstream myfile("dataBaseFlowPress.txt");
 
