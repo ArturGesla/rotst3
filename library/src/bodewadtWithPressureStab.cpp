@@ -362,7 +362,7 @@ namespace bwp
                     value = U(iiH) * (-1) / 2.0 / hz - ((1) / hz / hz);
                     tripletList.push_back(Triplet<std::complex<double>>(iif, iifzm, value));
 
-                    tripletListB.push_back(Triplet<std::complex<double>>(iif, iif, i));
+                    tripletListB.push_back(Triplet<std::complex<double>>(iif, iif, i*r));
                 }
 
                 // third
@@ -396,7 +396,7 @@ namespace bwp
                     value = U(iiH) * (-1) / 2.0 / hz - ((1) / hz / hz);
                     tripletList.push_back(Triplet<std::complex<double>>(iig, iigzm, value));
 
-                    tripletListB.push_back(Triplet<std::complex<double>>(iig, iig, i));
+                    tripletListB.push_back(Triplet<std::complex<double>>(iig, iig, i*r));
                 }
                 // fourth
                 {
@@ -421,7 +421,7 @@ namespace bwp
                     value = U(iiH) * (-1) / 2.0 / hz - (+(1) / hz / hz);
                     tripletList.push_back(Triplet<std::complex<double>>(iih, iihzm, value));
 
-                    tripletListB.push_back(Triplet<std::complex<double>>(iih, iih, i));
+                    tripletListB.push_back(Triplet<std::complex<double>>(iih, iih, i*r));
                 }
             }
         }
