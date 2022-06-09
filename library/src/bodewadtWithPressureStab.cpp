@@ -86,6 +86,10 @@ namespace bwp
 
         // Creating complex matrices A and B.
 
+        //what is life
+        jac=jac/std::complex<double>(0.0,1.0);
+        Bmat=Bmat/std::complex<double>(0.0,1.0); 
+
         n = jac.rows();
         rho = arcomplex<double>(10.0, 0.0);
         CompMatrixE(n, rho, nnza, valA, irowa, pcola, jac);
