@@ -33,14 +33,13 @@ namespace bwp
                 int nev, double sigmaR, double sigmaI);
 
     // void rs1DStab(double Re, int n, double Ro, double zmax)
-    void bwpStab(double Re, int n, double zmax, double sigmaR, double sigmaI,
+    void bwpStab(double Re, double Ro, int n, double zmax, double sigmaR, double sigmaI,
                  double alphaR, double alphaI, double betaR, double betaI, int nev)
     {
-        double Ro = 1; // bodewadt
+        //double Ro = 1; // bodewadt
 
         {
             std::cout << "Rotst3 |Stability analysis 1D | based on Lingowood 1996" << std::endl;
-            std::cout << "Bodewadt base flow with pressure" << std::endl;
             std::cout << "n: " << n << " Ro: " << Ro << " zmax: " << zmax << " Re: " << Re << std::endl;
         }
         int neq = 4; // conti, r,th,z mom
@@ -50,7 +49,7 @@ namespace bwp
         VectorXd u = VectorXd::Ones(n * neq);
 
         VectorXd U(n * neq);
-        U = bwp::bwpBaseFlow(n, zmax, false);
+        U = bwp::bwpBaseFlow(n, zmax, false, Ro);
         // std::complex<double> alpha(1.0, 0.0);
         // std::complex<double> beta(0.0, 0.0);
         std::complex<double> alpha(alphaR, alphaI);

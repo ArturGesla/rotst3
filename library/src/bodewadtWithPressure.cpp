@@ -17,9 +17,9 @@ namespace bwp
     void saveResult(VectorXd &u, VectorXd &p);
     void checkJacobian(int neq);
 
-    VectorXd bwpBaseFlow(int n, double zmax, bool verbose)
+    VectorXd bwpBaseFlow(int n, double zmax, bool verbose, double Ro)
     {
-        double Ro = 1;
+        //double Ro = 1;
         {
             std::cout << "Rotst3 | Base flow 1D | based on Lingowood 1996" << std::endl;
             std::cout << "Bodewadt base flow with pressure" << std::endl;

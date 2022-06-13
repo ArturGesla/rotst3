@@ -5,5 +5,5 @@ using namespace Eigen;
 
 namespace bwp
 {
-    VectorXd bwpBaseFlow(int n = 101, double zmax = 30, bool verbose = false);
+    VectorXd bwpBaseFlow(int n = 101, double zmax = 30, bool verbose = false, double Ro=1.0);
 }
