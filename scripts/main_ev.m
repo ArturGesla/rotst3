@@ -10,10 +10,10 @@ B(nn,nn)=0; %bit not safe;
 jac=sparse(jac.data(2:end,1),jac.data(2:end,2),jac.data(2:end,3))+1i*sparse(jac.data(2:end,1),jac.data(2:end,2),jac.data(2:end,4));
 %%
 nev = 100;
-     sigma = -0.2;
+     sigma = -0.218;
      disp([num2str(nev), ' eigenvalues asked with a shift ',num2str(sigma)])
      tic
-     [Vp lbda] = eigs(jac,B,nev,sigma);
+     [Vp lbda] = eigs(jac,B,nev,sigma,"Display",1);
      time=toc
      lbda = diag(lbda);
 
@@ -27,7 +27,7 @@ nev = 100;
      lbda=lbda(b);
      Vp=Vp(:,b);
      lbda(1)
-     lbdaMaster=[lbdaMaster,lbda];
+     %lbdaMaster=[lbdaMaster,lbda];
      %%
      b=1
      x=real(Vp(:,b))
