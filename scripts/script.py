@@ -26,11 +26,14 @@ if i == 1:
 if i == 2:
     a = np.loadtxt("../build/evs.dat")
     plt.plot(a[:,0],a[:,1], "x")
+    plt.grid()
     plt.show()
+    print(np.max(a[:,1]))
+    print(a[(np.argmax(a[:,1])),0])
 
 if i == 3:
     a = np.loadtxt("../build/evcs.dat")
-    plt.plot(a[0,:], "-x")
-    plt.plot(a[1,:], "-x")
+    plt.plot(a[0,4:-1:4], "-x")
+    plt.plot(a[1,4:-1:4], "-x")
     plt.show()
 # %%

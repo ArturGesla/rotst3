@@ -36,7 +36,7 @@ namespace bwp
     void bwpStab(double Re, double Ro, int n, double zmax, double sigmaR, double sigmaI,
                  double alphaR, double alphaI, double betaR, double betaI, int nev)
     {
-        //double Ro = 1; // bodewadt
+        // double Ro = 1; // bodewadt
 
         {
             std::cout << "Rotst3 |Stability analysis 1D | based on Lingowood 1996" << std::endl;
@@ -85,13 +85,13 @@ namespace bwp
 
         // Creating complex matrices A and B.
 
-        //what is life
-        jac=jac/std::complex<double>(0.0,1.0);
-        Bmat=Bmat/std::complex<double>(0.0,1.0); 
+        // what is life
+        jac = jac / std::complex<double>(0.0, 1.0);
+        Bmat = Bmat / std::complex<double>(0.0, 1.0);
 
         n = jac.rows();
         rho = arcomplex<double>(10.0, 0.0);
-        
+
         CompMatrixE(n, rho, nnza, valA, irowa, pcola, jac);
         ARluNonSymMatrix<arcomplex<double>, double> A(n, nnza, valA, irowa, pcola);
 
@@ -130,7 +130,7 @@ namespace bwp
 
         {
             // Printing eigenvalues.
-            std::ofstream myfile("evs.dat", std::ios_base::app);
+            std::ofstream myfile("evs.dat");
             // std::cout << "Eigenvalues:" << std::endl;
             for (int i = 0; i < nconv; i++)
             {
@@ -282,14 +282,14 @@ namespace bwp
 
                 rhs(iif) = r * U(iiF) * u(iif) * i * alpha + u(iif) * U(iiF) + U(iiG) * u(iif) * i * r * beta +
                            +U(iiH) * (u(iifzp) - u(iifzm)) / 2.0 / hz + r * u(iih) * (U(iiFzp) - U(iiFzm)) / 2.0 / hz +
-                           -2.0 * U(iiG) * u(iig) +
+                           -2.0 * U(iiG) * u(iig) + -Co * u(iig) +
                            -(-i * alpha * (u(iip) + u(iipzp)) / 2.0 - u(iif) / r / r + i * u(iif) * alpha / r +
                              -alpha * alpha * u(iif) - beta * beta * u(iif) +
                              +(u(iifzp) - 2 * u(iif) + u(iifzm)) / hz / hz - 2.0 / r * u(iig) * i * beta);
 
                 rhs(iig) = r * U(iiF) * u(iig) * i * alpha + u(iif) * U(iiG) + U(iiG) * u(iig) * i * r * beta +
                            +U(iiH) * (u(iigzp) - u(iigzm)) / 2.0 / hz + r * u(iih) * (U(iiGzp) - U(iiGzm)) / 2.0 / hz +
-                           +U(iiF) * u(iig) + u(iif) * U(iiG) +
+                           +U(iiF) * u(iig) + u(iif) * U(iiG) + Co*u(iif)+
                            -(-i * beta * (u(iip) + u(iipzp)) / 2.0 - u(iig) / r / r + i * u(iig) * alpha / r +
                              -alpha * alpha * u(iig) - beta * beta * u(iig) +
                              +(u(iigzp) - 2 * u(iig) + u(iigzm)) / hz / hz + 2.0 / r * u(iif) * i * beta);
@@ -354,7 +354,7 @@ namespace bwp
                     tripletList.push_back(Triplet<std::complex<double>>(iif, iif, value));
 
                     value = -2.0 * U(iiG) * 1.0 +
-                            -(-2.0 / r * 1.0 * i * beta);
+                            -(-2.0 / r * 1.0 * i * beta)-Co;
                     tripletList.push_back(Triplet<std::complex<double>>(iif, iig, value));
 
                     value = r * 1.0 * (U(iiFzp) - U(iiFzm)) / 2.0 / hz;
@@ -366,7 +366,7 @@ namespace bwp
                     value = U(iiH) * (-1) / 2.0 / hz - ((1) / hz / hz);
                     tripletList.push_back(Triplet<std::complex<double>>(iif, iifzm, value));
 
-                    tripletListB.push_back(Triplet<std::complex<double>>(iif, iif, i*r));
+                    tripletListB.push_back(Triplet<std::complex<double>>(iif, iif, i * r));
                 }
 
                 // third
@@ -381,7 +381,7 @@ namespace bwp
 
                     value = 1.0 * U(iiG) +
                             1.0 * U(iiG) +
-                            -(2.0 / r * 1.0 * i * beta);
+                            -(2.0 / r * 1.0 * i * beta)+Co;
                     tripletList.push_back(Triplet<std::complex<double>>(iig, iif, value));
 
                     value = r * U(iiF) * 1.0 * i * alpha + U(iiG) * 1.0 * i * r * beta +
@@ -400,7 +400,7 @@ namespace bwp
                     value = U(iiH) * (-1) / 2.0 / hz - ((1) / hz / hz);
                     tripletList.push_back(Triplet<std::complex<double>>(iig, iigzm, value));
 
-                    tripletListB.push_back(Triplet<std::complex<double>>(iig, iig, i*r));
+                    tripletListB.push_back(Triplet<std::complex<double>>(iig, iig, i * r));
                 }
                 // fourth
                 {
@@ -425,7 +425,7 @@ namespace bwp
                     value = U(iiH) * (-1) / 2.0 / hz - (+(1) / hz / hz);
                     tripletList.push_back(Triplet<std::complex<double>>(iih, iihzm, value));
 
-                    tripletListB.push_back(Triplet<std::complex<double>>(iih, iih, i*r));
+                    tripletListB.push_back(Triplet<std::complex<double>>(iih, iih, i * r));
                 }
             }
         }
@@ -451,13 +451,13 @@ namespace bwp
             int iihzm = iih - neq;
 
             rhs(iip) = (u(iif) + u(iifzm)) / 2.0 * i * alpha + (u(iif) + u(iifzm)) / 2.0 / r +
-                      +(u(iig) + u(iigzm)) / 2.0 * i * beta + (u(iih) - u(iihzm)) / hz;
-             //rhs(iip)=u(iip)-uBc;
+                       +(u(iig) + u(iigzm)) / 2.0 * i * beta + (u(iih) - u(iihzm)) / hz;
+            // rhs(iip)=u(iip)-uBc;
             rhs(iif) = u(iif) - uBc;
             rhs(iig) = u(iig) - uBc;
             rhs(iih) = u(iih) - uBc;
 
-             //tripletList.push_back(Triplet<std::complex<double>>(iip, iip, 1));
+            // tripletList.push_back(Triplet<std::complex<double>>(iip, iip, 1));
             //   first
             {
                 std::complex<double> value;
@@ -479,7 +479,7 @@ namespace bwp
 
                 value = (-1) / hz;
                 tripletList.push_back(Triplet<std::complex<double>>(iip, iihzm, value));
-            } //shouldn't this give not fullrank?
+            } // shouldn't this give not fullrank?
             tripletList.push_back(Triplet<std::complex<double>>(iif, iif, 1));
             tripletList.push_back(Triplet<std::complex<double>>(iig, iig, 1));
             tripletList.push_back(Triplet<std::complex<double>>(iih, iih, 1));
@@ -513,7 +513,7 @@ namespace bwp
         VectorXcd rhs = VectorXd::Zero(n * neq);
         VectorXd phi = VectorXd::Ones(n * neq);
 
-        double Ro = 1;
+        double Ro = 0.5;
         double zmax = 21;
 
         //       VectorXd u(n * 3);
