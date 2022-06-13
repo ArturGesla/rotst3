@@ -88,6 +88,10 @@ namespace bwp
 
         n = jac.rows();
         rho = arcomplex<double>(10.0, 0.0);
+
+        jac=jac/std::complex<double>(0.0,1.0);
+        Bmat=Bmat/std::complex<double>(0.0,1.0);
+        
         CompMatrixE(n, rho, nnza, valA, irowa, pcola, jac);
         ARluNonSymMatrix<arcomplex<double>, double> A(n, nnza, valA, irowa, pcola);
 
