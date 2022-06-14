@@ -289,7 +289,7 @@ namespace bwp
 
                 rhs(iig) = r * U(iiF) * u(iig) * i * alpha + u(iif) * U(iiG) + U(iiG) * u(iig) * i * r * beta +
                            +U(iiH) * (u(iigzp) - u(iigzm)) / 2.0 / hz + r * u(iih) * (U(iiGzp) - U(iiGzm)) / 2.0 / hz +
-                           +U(iiF) * u(iig) + u(iif) * U(iiG) + Co*u(iif)+
+                           +U(iiF) * u(iig) + u(iif) * U(iiG) + Co * u(iif) +
                            -(-i * beta * (u(iip) + u(iipzp)) / 2.0 - u(iig) / r / r + i * u(iig) * alpha / r +
                              -alpha * alpha * u(iig) - beta * beta * u(iig) +
                              +(u(iigzp) - 2 * u(iig) + u(iigzm)) / hz / hz + 2.0 / r * u(iif) * i * beta);
@@ -354,7 +354,7 @@ namespace bwp
                     tripletList.push_back(Triplet<std::complex<double>>(iif, iif, value));
 
                     value = -2.0 * U(iiG) * 1.0 +
-                            -(-2.0 / r * 1.0 * i * beta)-Co;
+                            -(-2.0 / r * 1.0 * i * beta) - Co;
                     tripletList.push_back(Triplet<std::complex<double>>(iif, iig, value));
 
                     value = r * 1.0 * (U(iiFzp) - U(iiFzm)) / 2.0 / hz;
@@ -381,7 +381,7 @@ namespace bwp
 
                     value = 1.0 * U(iiG) +
                             1.0 * U(iiG) +
-                            -(2.0 / r * 1.0 * i * beta)+Co;
+                            -(2.0 / r * 1.0 * i * beta) + Co;
                     tripletList.push_back(Triplet<std::complex<double>>(iig, iif, value));
 
                     value = r * U(iiF) * 1.0 * i * alpha + U(iiG) * 1.0 * i * r * beta +
@@ -452,12 +452,13 @@ namespace bwp
 
             rhs(iip) = (u(iif) + u(iifzm)) / 2.0 * i * alpha + (u(iif) + u(iifzm)) / 2.0 / r +
                        +(u(iig) + u(iigzm)) / 2.0 * i * beta + (u(iih) - u(iihzm)) / hz;
-            // rhs(iip)=u(iip)-uBc;
+            //rhs(iip) = u(iip) - uBc;
             rhs(iif) = u(iif) - uBc;
             rhs(iig) = u(iig) - uBc;
-            rhs(iih) = u(iih) - uBc;
+            //rhs(iih) = (u(iih) - u(iihzm - neq)) / 2.0 / hz - u(iip); // no stress
+            rhs(iih) = u(iih)-uBc; 
 
-            // tripletList.push_back(Triplet<std::complex<double>>(iip, iip, 1));
+            //ripletList.push_back(Triplet<std::complex<double>>(iip, iip, 1));
             //   first
             {
                 std::complex<double> value;
@@ -482,7 +483,13 @@ namespace bwp
             } // shouldn't this give not fullrank?
             tripletList.push_back(Triplet<std::complex<double>>(iif, iif, 1));
             tripletList.push_back(Triplet<std::complex<double>>(iig, iig, 1));
-            tripletList.push_back(Triplet<std::complex<double>>(iih, iih, 1));
+             tripletList.push_back(Triplet<std::complex<double>>(iih, iih, 1));
+            // last
+            // {
+            //     tripletList.push_back(Triplet<std::complex<double>>(iih, iih, 1 / 2.0 / hz));
+            //     tripletList.push_back(Triplet<std::complex<double>>(iih, iihzm - neq, -1 / 2.0 / hz));
+            //     tripletList.push_back(Triplet<std::complex<double>>(iih, iip, -1.0));
+            // }
         }
         // boundaries addon
         // {

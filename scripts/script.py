@@ -33,7 +33,10 @@ if i == 2:
 
 if i == 3:
     a = np.loadtxt("../build/evcs.dat")
-    plt.plot(a[0,4:-1:4], "-x")
-    plt.plot(a[1,4:-1:4], "-x")
+    plt.plot(a[0,4:-1:4], "-")
+    plt.plot(a[0,1:-1:4], "-")
+    plt.plot(a[0,2:-1:4], "-")
+    plt.plot(a[0,3:-1:4], "-")
+    plt.legend(["p","u","v","w"])
     plt.show()
 # %%
